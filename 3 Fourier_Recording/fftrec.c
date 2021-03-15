@@ -67,7 +67,7 @@ void sound_init(Sound *sound) {
     desired.freq = sound->FreqSample;
     desired.format = AUDIO_S16SYS; 
     desired.channels = 1;
-    desired.samples = 2048;
+    desired.samples = 4096;
     desired.callback = SDLAudioCallback;
     desired.userdata = sound;
 
@@ -106,11 +106,11 @@ int main () {
     double *in;// , *out; 
     fftw_complex *out;
     fftw_plan p;
-    in = (double*) fftw_malloc(sizeof(double) * 2048 + 1);
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 2048);
+    in = (double*) fftw_malloc(sizeof(double) * sound.Obtained.samples + 1);
+    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * sound.Obtained.samples);
     //out = (double*) fftw_malloc(sizeof(double) * 2048 + 1);
-    int *mag = malloc(sizeof(int) * 2048 + 1);
-    p = fftw_plan_dft_r2c_1d(2048, in, out, FFTW_ESTIMATE);
+    int *mag = malloc(sizeof(int) * sound.Obtained.samples + 1);
+    p = fftw_plan_dft_r2c_1d(sound.Obtained.samples, in, out, FFTW_ESTIMATE);
     int max = INT_MIN;
 
     SDL_PauseAudioDevice(sound.device, PLAY);
@@ -120,20 +120,20 @@ int main () {
         SDL_RenderClear(W->Render);        
         int w,h;
         SDL_GetWindowSize(W->Window,&w,&h);
-        DrawWave(W->Render,1,1,w,h/2,sound.Wave,sound.Obtained.samples, 2048.0f / h ,sound.Max);
+        DrawWave(W->Render,1,1,w,h/2,sound.Wave,sound.Obtained.samples,(float) sound.Obtained.samples / h ,sound.Max);
 
         for (int i = 0; i < sound.Obtained.samples; i++) {
             in[i] = sound.Wave[i];
         }
         fftw_execute(p);
         
-        for (int i = 0; i < 1024; i++) {
+        for (int i = 0; i < sound.Obtained.samples >> 1; i++) {
             mag[i] = cabs(out[i]);
             //mag[i] = out[i];
             if (mag[i] > max) max = mag[i];
         }
         
-        DrawWave(W->Render,1,h/2,w,h,mag,1024, 1 , max);
+        DrawWave(W->Render,1,h/2,w,h,mag,sound.Obtained.samples >> 1, 1 , max);
         SDL_RenderPresent(W->Render);
 
 
