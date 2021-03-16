@@ -10,7 +10,7 @@ PROGRAMS=$(basename $(wildcard *.c))
 all: $(PROGRAMS)
 
 check:
-	valgrind --leak-check=yes $(PROGRAMS)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --leak-check=yes ./$(PROGRAMS)
 
 clean:
 	rm -f $(PROGRAMS) *.o

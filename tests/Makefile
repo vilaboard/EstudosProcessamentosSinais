@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-g -Wall $(shell sdl2-config --cflags)
-LDFLAGS=$(shell sdl2-config --libs) -lSDL2_mixer -lm -lfftw3
+LDFLAGS=$(shell sdl2-config --libs) -lSDL2_mixer -lm -lpulseaudio
 
 PROGRAMS=$(basename $(wildcard *.c))
 
@@ -8,9 +8,6 @@ PROGRAMS=$(basename $(wildcard *.c))
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 all: $(PROGRAMS)
-
-check:
-	valgrind --leak-check=yes $(PROGRAMS)
 
 clean:
 	rm -f $(PROGRAMS) *.o
