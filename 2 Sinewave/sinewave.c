@@ -5,7 +5,7 @@
 
 #define PLAY        0
 #define STOP        1
-#define FREQ		100 // G note
+#define FREQ		440 
 
 typedef struct {
     SDL_AudioDeviceID device;
@@ -139,10 +139,6 @@ SDL_Renderer * WindowCreate() {
 										  512,
 										  256,
  										  SDL_WINDOW_RESIZABLE);
-    SDL_Surface *s;
-    s = SDL_GetWindowSurface( window );
-    SDL_FillRect(s, NULL, SDL_MapRGB(s->format, 0, 0, 0));
-    SDL_UpdateWindowSurface( window );
     return SDL_CreateRenderer(window, -1, 0);
 }
 

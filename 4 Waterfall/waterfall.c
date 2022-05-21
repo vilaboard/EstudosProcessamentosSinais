@@ -6,6 +6,12 @@
 #include <complex.h> 
 #include <fftw3.h>
 
+#define  DEBUG  1
+
+int terror(int f, int l, char * file);
+#define TER( X )    terror(X, __LINE__,__FILE__)
+
+
 #define PLAY        0
 #define STOP        1
 
@@ -122,14 +128,14 @@ int main () {
     int quit = 0;
     SDL_Event event;
 
-    SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO);
+    TER(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO));
     Window *W = WindowCreate();
     atexit(SDL_Quit);   
 	 
 	sound_init(&sound);
     sound.Play              = PLAY;
     SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" );
-    
+
 	
     double *in;// , *out; 
     fftw_complex *out;
@@ -151,8 +157,8 @@ int main () {
     Water.y = 0;
     Water.w = 512;
     Water.h = 85;
-    Water.max = sound.Max;
-    Water.min = sound.Min;  
+    Water.max = sound.Max / 2;
+    Water.min = sound.Min / 2;  
 
     WaterfallInit(&Water);
 
@@ -175,13 +181,13 @@ int main () {
             }
             fftw_execute(p);
             for (int i = 0; i < sound.Obtained.samples >> 1; i++ ) {
-                mag[i] = cabs(out[i]);
+                mag[i] = log10(cabs(out[i])) * cabs(out[i]);
                 if (mag[i] > max) max = mag[i];
             }
             //printf ("-> %d ", max );
             sound.filled = 0;
         }
-        DrawWave(W->Render,1,h-h/6,w,h/3,mag,sound.Obtained.samples >> 1, 1 , max);
+        DrawWave(W->Render,1,h-h/6,w,h/3,mag,sound.Obtained.samples >> 1, 1 , max/3);
 
         WaterfallAdd(&Water,mag,sound.Obtained.samples >> 1);
         WaterfallRender(&Water);
@@ -227,14 +233,23 @@ Window * WindowCreate() {
 										  512,
 										  256,
  										  SDL_WINDOW_RESIZABLE);
+    if (window == NULL) {
+        printf ("\e[1;31m[ Error creating window ]\e[0m\n");
+    }
+    /*
     SDL_Surface *s;
     s = SDL_GetWindowSurface( window );
-    SDL_FillRect(s, NULL, SDL_MapRGB(s->format, 0, 0, 0));
-    SDL_UpdateWindowSurface( window );
-
+    TER(SDL_FillRect(s, NULL, SDL_MapRGB(s->format, 0, 0, 0)));
+    TER(SDL_UpdateWindowSurface( window ));
+    */
     Window *W = malloc(sizeof(Window));
-    W->Render = SDL_CreateRenderer(window, -1, 0);
+    W->Render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     W->Window = window;
+
+    if (W->Render == NULL) {
+        printf ("\e[1;31m[ Error creating renderer ]\e[0m\n");
+        printf("\e[1;31m[ SDL_Init failed: %s ]\e[0m\n", SDL_GetError());
+    }
 
     return W;
 }
@@ -263,9 +278,6 @@ void WaterfallAdd(Waterfall *W, int * data, int length){
         for (i = 0; i < length; i++) {
             xi = (int) floor(x);
             pline[xi].U32 = ( pline[xi].U32 + (W->offset + (data[i]) /* * W->scale*/) );
-
-            //if (pline[xi].U32 > UINT32_MAX) pline[xi].U32 = UINT32_MAX;
-            //printf (" %d %d", pline[xi].U32, data[i]);
             x = x + x_increment;
         }        
     } else {
@@ -332,4 +344,15 @@ void DrawWave(SDL_Renderer * Render, int x, int y, int width, int height, int *d
             yi = y + (height>> 1) - data[i] * scale;
         }
 
+}
+
+int terror(int f, int l, char * file) {
+    if (f != 0) {
+        printf ("\e[1;31m[ Error %d at %d in file %s ]\e[0m\n",f,l,file);
+        exit(-1);
+    }
+    #if DEBUG == 1
+        printf ("[ R %d at %d in file %s ]\n",f,l,file);
+    #endif
+   return f; 
 }
